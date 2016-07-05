@@ -7,10 +7,11 @@
 <link rel="import" href="../../bower_components/app-layout/app-toolbar/app-toolbar.html">
 
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-data-table/iron-data-table.html">
+<link rel="import" href="../../bower_components/iron-data-table/data-table-column.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 
-<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
@@ -25,6 +26,7 @@
     <style>
       :host {
         display: block;
+        height: 100%;
       }
 
       app-header {
@@ -35,6 +37,10 @@
       * {
         --primary-color: #13473f;
         --primary-text-color: #70C0B6;
+      }
+
+      iron-data-table {
+        height: calc(100vh - 64px);
       }
     </style>
     <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
@@ -56,26 +62,41 @@
             <div title>Q's Ark Reader</div>
           </app-toolbar>
         </app-header>
-        <iron-list items="[[_sortAndFilter(dinos)]]" as="dino" scroll-target="document">
-          <template>
-            <paper-icon-item>
-              <iron-icon icon="[[_genderIcon(dino)]]" item-icon></iron-icon>
-              <paper-item-body two-line>
-                <div>
-                  Level [[dino.baseLevel]]
-                  Leben [[_null(dino.wildLevels.health)]]
-                  Ausdauer [[_null(dino.wildLevels.stamina)]]
-                  Sauerstoff [[_null(dino.wildLevels.oxygen)]]
-                  Nahrung [[_null(dino.wildLevels.food)]]
-                  Gewicht [[_null(dino.wildLevels.weight)]]
-                  Nahkampf [[_null(dino.wildLevels.melee)]]
-                  [[_tamed(dino)]]
-                </div>
-                <div secondary>Lat [[dino.lat]] Lon [[dino.lon]]</div>
-              </paper-item-body>
-            </paper-item>
-          </template>
-        </iron-list>
+        <iron-data-table items="[[_filter(dinos)]]" sort-order='[{"direction":"desc","path":"baseLevel"}]'>
+          <data-table-column name="Level" sort-by="baseLevel">
+            <template>[[item.baseLevel]]</template>
+          </data-table-column>
+          <data-table-column flex="0.5">
+            <template><iron-icon icon="[[_genderIcon(item)]]"></iron-icon></template>
+          </data-table-column>
+          <data-table-column name="Name" sort-by="name">
+            <template>[[item.name]]</template>
+          </data-table-column>
+          <data-table-column name="Lat">
+            <template>[[item.lat]]</template>
+          </data-table-column>
+          <data-table-column name="Lon">
+            <template>[[item.lon]]</template>
+          </data-table-column>
+          <data-table-column name="Leben" sort-by="wildLevels.health">
+            <template>[[_null(item.wildLevels.health)]]</template>
+          </data-table-column>
+          <data-table-column name="Ausdauer" sort-by="wildLevels.stamina">
+            <template>[[_null(item.wildLevels.stamina)]]</template>
+          </data-table-column>
+          <data-table-column name="Sauerstoff" sort-by="wildLevels.oxygen">
+            <template>[[_null(item.wildLevels.oxygen)]]</template>
+          </data-table-column>
+          <data-table-column name="Nahrung" sort-by="wildLevels.food">
+            <template>[[_null(item.wildLevels.food)]]</template>
+          </data-table-column>
+          <data-table-column name="Gewicht" sort-by="wildLevels.weight">
+            <template>[[_null(item.wildLevels.weight)]]</template>
+          </data-table-column>
+          <data-table-column name="Nahkampf" sort-by="wildLevels.melee">
+            <template>[[_null(item.wildLevels.melee)]]</template>
+          </data-table-column>
+        </iron-data-table>
       </app-header-layout>
     </app-drawer-layout>
   </template>
@@ -106,14 +127,8 @@
         return myData
       },
 
-      _sortAndFilter: function(data) {
-        var myData = data.slice(1)
-
-        myData.sort(function(a,b){
-          return a.baseLevel > b.baseLevel ? -1 : a.baseLevel == b.baseLevel ? 0 : 1
-        })
-
-        return myData
+      _filter: function(data) {
+        return data.slice(1)
       },
 
       _null: function(x) {
