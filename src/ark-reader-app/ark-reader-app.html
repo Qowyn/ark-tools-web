@@ -1,0 +1,133 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
+<link rel="import" href="../../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../../bower_components/app-layout/app-toolbar/app-toolbar.html">
+
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+
+<link rel="import" href="ark-m-icons.html">
+<link rel="import" href="ark-f-icons.html">
+
+<dom-module id="ark-reader-app">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      app-header {
+        background-color: #13473f;
+        color: #70C0B6;
+      }
+
+      * {
+        --primary-color: #13473f;
+        --primary-text-color: #70C0B6;
+      }
+    </style>
+    <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
+    <iron-ajax auto url="[[_clsUrl(cls)]]" handle-as="json" last-response="{{dinos}}"></iron-ajax>
+    <app-drawer-layout>
+      <app-drawer swipe-open>
+        <div style="height: 100%; overflow: auto;">
+          <paper-listbox attr-for-selected="cls" selected="{{cls}}">
+            <template is="dom-repeat" items="[[_sortClasses(classes)]]">
+              <paper-item cls="[[item.cls]]">[[item.name]]</paper-item>
+            </template>
+          </paper-listbox>
+        </div>
+      </app-drawer>
+      <app-header-layout>
+        <app-header fixed>
+          <app-toolbar>
+            <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
+            <div title>Q's Ark Reader</div>
+          </app-toolbar>
+        </app-header>
+        <iron-list items="[[_sortAndFilter(dinos)]]" as="dino" scroll-target="document">
+          <template>
+            <paper-icon-item>
+              <iron-icon icon="[[_genderIcon(dino)]]" item-icon></iron-icon>
+              <paper-item-body two-line>
+                <div>
+                  Level [[dino.baseLevel]]
+                  Leben [[_null(dino.wildLevels.health)]]
+                  Ausdauer [[_null(dino.wildLevels.stamina)]]
+                  Sauerstoff [[_null(dino.wildLevels.oxygen)]]
+                  Nahrung [[_null(dino.wildLevels.food)]]
+                  Gewicht [[_null(dino.wildLevels.weight)]]
+                  Nahkampf [[_null(dino.wildLevels.melee)]]
+                  [[_tamed(dino)]]
+                </div>
+                <div secondary>Lat [[dino.lat]] Lon [[dino.lon]]</div>
+              </paper-item-body>
+            </paper-item>
+          </template>
+        </iron-list>
+      </app-header-layout>
+    </app-drawer-layout>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'ark-reader-app',
+
+      properties: {
+        prop1: {
+          type: String,
+          value: 'ark-reader-app',
+        },
+      },
+
+      _clsUrl: function(cls) {
+        return '/data/' + cls + '_Character_BP_C.json'
+      },
+
+      _sortClasses: function(data) {
+        var myData = data.slice()
+
+        myData.sort(function(a,b){
+          return a.name > b.name ? 1 : a.name == b.name ? 0 : -1
+        })
+
+        return myData
+      },
+
+      _sortAndFilter: function(data) {
+        var myData = data.slice(1)
+
+        myData.sort(function(a,b){
+          return a.baseLevel > b.baseLevel ? -1 : a.baseLevel == b.baseLevel ? 0 : 1
+        })
+
+        return myData
+      },
+
+      _null: function(x) {
+        return x ? x : 0
+      },
+
+      _tamed: function(x) {
+        return x.tamed ? 'Name ' + x.name : ''
+      },
+
+      _genderIcon: function(x) {
+        return x.female ? 'ark-f:female' : 'ark-m:male'
+      },
+
+    })
+  </script>
+</dom-module>

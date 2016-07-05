@@ -1,0 +1,7 @@
+{
+  "name": "Ark Reader",
+  "short_name": "Ark Reader",
+  "description": "Online Display of data extracted from ark save games",
+  "start_url": "/",
+  "display": "standalone"
+}
