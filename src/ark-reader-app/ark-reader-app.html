@@ -42,14 +42,21 @@
       iron-data-table {
         height: calc(100vh - 64px);
       }
+
+      iron-data-table .detail {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+        align-items: center;
+      }
     </style>
-    <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
+    <iron-ajax auto url="/data/classes.json?4" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <iron-ajax auto url="[[_clsUrl(cls)]]" handle-as="json" last-response="{{dinos}}"></iron-ajax>
     <app-drawer-layout>
       <app-drawer swipe-open>
         <div style="height: 100%; overflow: auto;">
           <paper-listbox attr-for-selected="cls" selected="{{cls}}">
-            <template is="dom-repeat" items="[[_sortClasses(classes)]]">
+            <template is="dom-repeat" items="[[sortedClasses]]">
               <paper-item cls="[[item.cls]]">[[item.name]]</paper-item>
             </template>
           </paper-listbox>
@@ -62,39 +69,44 @@
             <div title>Q's Ark Reader</div>
           </app-toolbar>
         </app-header>
-        <iron-data-table items="[[_filter(dinos)]]" sort-order='[{"direction":"desc","path":"baseLevel"}]'>
+        <iron-data-table items="[[dinoData]]" before-cell-bind="[[_boundBeforeCellBind]]">
+          <template is="row-detail">
+            <div class="detail">
+
+            </div>
+          </template>
+          <data-table-column width="0">
+            <template><iron-icon icon="[[_genderIcon(item)]]"></iron-icon></template>
+          </data-table-column>
           <data-table-column name="Level" sort-by="baseLevel">
             <template>[[item.baseLevel]]</template>
-          </data-table-column>
-          <data-table-column flex="0.5">
-            <template><iron-icon icon="[[_genderIcon(item)]]"></iron-icon></template>
           </data-table-column>
           <data-table-column name="Name" sort-by="name">
             <template>[[item.name]]</template>
           </data-table-column>
-          <data-table-column name="Lat">
+          <data-table-column name="Lat" width="70">
             <template>[[item.lat]]</template>
           </data-table-column>
-          <data-table-column name="Lon">
+          <data-table-column name="Lon" width="70">
             <template>[[item.lon]]</template>
           </data-table-column>
-          <data-table-column name="Leben" sort-by="wildLevels.health">
-            <template>[[_null(item.wildLevels.health)]]</template>
+          <data-table-column name="Leben" breeding sort-by="wildLevels.health">
+            <template>[[item.wildLevels.health]]</template>
           </data-table-column>
-          <data-table-column name="Ausdauer" sort-by="wildLevels.stamina">
-            <template>[[_null(item.wildLevels.stamina)]]</template>
+          <data-table-column name="Ausdauer" breeding sort-by="wildLevels.stamina">
+            <template>[[item.wildLevels.stamina]]</template>
           </data-table-column>
-          <data-table-column name="Sauerstoff" sort-by="wildLevels.oxygen">
-            <template>[[_null(item.wildLevels.oxygen)]]</template>
+          <data-table-column name="Sauerstoff" breeding sort-by="wildLevels.oxygen">
+            <template>[[item.wildLevels.oxygen]]</template>
           </data-table-column>
-          <data-table-column name="Nahrung" sort-by="wildLevels.food">
-            <template>[[_null(item.wildLevels.food)]]</template>
+          <data-table-column name="Nahrung" breeding sort-by="wildLevels.food">
+            <template>[[item.wildLevels.food]]</template>
           </data-table-column>
-          <data-table-column name="Gewicht" sort-by="wildLevels.weight">
-            <template>[[_null(item.wildLevels.weight)]]</template>
+          <data-table-column name="Gewicht" breeding sort-by="wildLevels.weight">
+            <template>[[item.wildLevels.weight]]</template>
           </data-table-column>
-          <data-table-column name="Nahkampf" sort-by="wildLevels.melee">
-            <template>[[_null(item.wildLevels.melee)]]</template>
+          <data-table-column name="Nahkampf" breeding sort-by="wildLevels.melee">
+            <template>[[item.wildLevels.melee]]</template>
           </data-table-column>
         </iron-data-table>
       </app-header-layout>
@@ -107,10 +119,20 @@
       is: 'ark-reader-app',
 
       properties: {
-        prop1: {
-          type: String,
-          value: 'ark-reader-app',
+        dinoData: {
+          type: Array,
+          computed: '_filterAndFix(dinos)'
         },
+        sortedClasses: {
+          type: Array,
+          computed: '_sortClasses(classes)'
+        },
+        _boundBeforeCellBind: {
+          type: Object,
+          value: function() {
+            return this._beforeCellBind.bind(this)
+          }
+        }
       },
 
       _clsUrl: function(cls) {
@@ -127,8 +149,24 @@
         return myData
       },
 
-      _filter: function(data) {
-        return data.slice(1)
+      _filterAndFix: function(data) {
+        var mydata = data.slice(1)
+
+        mydata.sort(function(a,b){
+          return a.baseLevel > b.baseLevel ? -1 : a.baseLevel == b.baseLevel ? 0 : 1
+        })
+
+        mydata.forEach(function(a){
+          ["health","stamina","oxygen","food","weight","melee"].forEach(function(f){
+            if (typeof a.wildLevels[f] === 'undefined') {
+              a.wildLevels[f] = 0
+            }
+          })
+
+          a.name = a.name ? a.name : a.tamed ? '-' : ''
+        })
+
+        return mydata
       },
 
       _null: function(x) {
@@ -141,6 +179,15 @@
 
       _genderIcon: function(x) {
         return x.female ? 'ark-f:female' : 'ark-m:male'
+      },
+
+      _beforeCellBind: function(data, cell) {
+        var maxHueValue = 150 / 6 * 1.4 // 40% > mean
+        if (data.item && data.item.wildLevels && cell.column.hasAttribute('breeding')) {
+          var v = Polymer.Base.get(cell.column.sortBy, data.item)
+          var hue = Math.min(120, Math.round(120 * v / maxHueValue))
+          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)'
+        }
       },
 
     })
