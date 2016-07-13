@@ -7,8 +7,9 @@
 <link rel="import" href="../../bower_components/app-layout/app-toolbar/app-toolbar.html">
 
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-request.html">
+<link rel="import" href="../../bower_components/iron-data-table/default-styles.html">
 <link rel="import" href="../../bower_components/iron-data-table/iron-data-table.html">
-<link rel="import" href="../../bower_components/iron-data-table/data-table-column.html">
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 
@@ -49,15 +50,18 @@
         justify-content: space-around;
         align-items: center;
       }
+
+      iron-data-table .center {
+        justify-content: center;
+      }
     </style>
     <iron-ajax auto url="/data/classes.json?4" handle-as="json" last-response="{{classes}}"></iron-ajax>
-    <iron-ajax auto url="[[_clsUrl(cls)]]" handle-as="json" last-response="{{dinos}}"></iron-ajax>
-    <app-drawer-layout>
-      <app-drawer swipe-open>
+    <app-drawer-layout id="drawerLayout">
+      <app-drawer swipe-open id="drawer">
         <div style="height: 100%; overflow: auto;">
           <paper-listbox attr-for-selected="cls" selected="{{cls}}">
             <template is="dom-repeat" items="[[sortedClasses]]">
-              <paper-item cls="[[item.cls]]">[[item.name]]</paper-item>
+              <paper-item cls="[[item.cls]]" on-tap="drawerTap">[[item.name]]</paper-item>
             </template>
           </paper-listbox>
         </div>
@@ -69,43 +73,40 @@
             <div title>Q's Ark Reader</div>
           </app-toolbar>
         </app-header>
-        <iron-data-table items="[[dinoData]]" before-cell-bind="[[_boundBeforeCellBind]]">
+        <iron-data-table data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]">
           <template is="row-detail">
             <div class="detail">
 
             </div>
           </template>
-          <data-table-column width="0">
-            <template><iron-icon icon="[[_genderIcon(item)]]"></iron-icon></template>
-          </data-table-column>
-          <data-table-column name="Level" sort-by="baseLevel">
-            <template>[[item.baseLevel]]</template>
+          <data-table-column name="Level" sort-by="baseLevel" width="50px" flex="0">
+            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon>[[item.baseLevel]]</template>
           </data-table-column>
           <data-table-column name="Name" sort-by="name">
             <template>[[item.name]]</template>
           </data-table-column>
-          <data-table-column name="Lat" width="70">
+          <data-table-column name="Lat" width="40px" flex="0">
             <template>[[item.lat]]</template>
           </data-table-column>
-          <data-table-column name="Lon" width="70">
+          <data-table-column name="Lon" width="40px" flex="0">
             <template>[[item.lon]]</template>
           </data-table-column>
-          <data-table-column name="Leben" breeding sort-by="wildLevels.health">
+          <data-table-column name="Leben" breeding sort-by="wildLevels.health" width="62px" flex="0">
             <template>[[item.wildLevels.health]]</template>
           </data-table-column>
-          <data-table-column name="Ausdauer" breeding sort-by="wildLevels.stamina">
+          <data-table-column name="Ausdauer" breeding sort-by="wildLevels.stamina" width="80px" flex="0">
             <template>[[item.wildLevels.stamina]]</template>
           </data-table-column>
-          <data-table-column name="Sauerstoff" breeding sort-by="wildLevels.oxygen">
+          <data-table-column name="Sauerstoff" breeding sort-by="wildLevels.oxygen" width="85px" flex="0">
             <template>[[item.wildLevels.oxygen]]</template>
           </data-table-column>
-          <data-table-column name="Nahrung" breeding sort-by="wildLevels.food">
+          <data-table-column name="Nahrung" breeding sort-by="wildLevels.food" width="74px" flex="0">
             <template>[[item.wildLevels.food]]</template>
           </data-table-column>
-          <data-table-column name="Gewicht" breeding sort-by="wildLevels.weight">
+          <data-table-column name="Gewicht" breeding sort-by="wildLevels.weight" width="72px" flex="0">
             <template>[[item.wildLevels.weight]]</template>
           </data-table-column>
-          <data-table-column name="Nahkampf" breeding sort-by="wildLevels.melee">
+          <data-table-column name="Nahkampf" breeding sort-by="wildLevels.melee" width="84px" flex="0">
             <template>[[item.wildLevels.melee]]</template>
           </data-table-column>
         </iron-data-table>
@@ -126,6 +127,10 @@
         sortedClasses: {
           type: Array,
           computed: '_sortClasses(classes)'
+        },
+        dataSource: {
+          type: Object,
+          computed: '_dataSource(cls)'
         },
         _boundBeforeCellBind: {
           type: Object,
@@ -187,8 +192,33 @@
           var v = Polymer.Base.get(cell.column.sortBy, data.item)
           var hue = Math.min(120, Math.round(120 * v / maxHueValue))
           cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)'
+          cell.toggleClass('center', true)
         }
       },
+
+      drawerTap: function() {
+        if (this.$.drawerLayout.narrow) {
+          this.$.drawer.close()
+        }
+      },
+
+      _dataSource: function(cls) {
+        var me = this
+        var delegate = null
+        return function(opts, success, err) {
+          if (delegate === null) {
+            var request = document.createElement('iron-request')
+
+            request.send({url: me._clsUrl(cls), handleAs: 'json'}).then(function(e) {
+              var data = me._filterAndFix(e.xhr.response)
+              delegate = ArrayDataSource(data)
+              delegate(opts, success, err)
+            }, err)
+          } else {
+            delegate(opts, success, err)
+          }
+        }
+      }
 
     })
   </script>

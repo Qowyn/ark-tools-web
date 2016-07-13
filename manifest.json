@@ -1,6 +1,6 @@
 {
-  "name": "Ark Reader",
-  "short_name": "Ark Reader",
+  "name": "ark-reader",
+  "short_name": "ark-reader",
   "description": "Online Display of data extracted from ark save games",
   "start_url": "/",
   "display": "standalone"
