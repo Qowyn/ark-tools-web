@@ -55,7 +55,7 @@
         justify-content: center;
       }
     </style>
-    <iron-ajax auto url="/data/classes.json?4" handle-as="json" last-response="{{classes}}"></iron-ajax>
+    <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <app-drawer-layout id="drawerLayout">
       <app-drawer swipe-open id="drawer">
         <div style="height: 100%; overflow: auto;">
@@ -79,8 +79,8 @@
 
             </div>
           </template>
-          <data-table-column name="Level" sort-by="baseLevel" width="50px" flex="0">
-            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon>[[item.baseLevel]]</template>
+          <data-table-column name="Level" sort-by="fullLevel" width="60px" flex="0">
+            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon><span style="text-align:center; flex:1;">[[_level(item)]]</span></template>
           </data-table-column>
           <data-table-column name="Name" sort-by="name">
             <template>[[item.name]]</template>
@@ -141,7 +141,7 @@
       },
 
       _clsUrl: function(cls) {
-        return '/data/' + cls + '_Character_BP_C.json'
+        return '/data/' + cls + '.json'
       },
 
       _sortClasses: function(data) {
@@ -155,13 +155,12 @@
       },
 
       _filterAndFix: function(data) {
-        var mydata = data.slice(1)
-
-        mydata.sort(function(a,b){
-          return a.baseLevel > b.baseLevel ? -1 : a.baseLevel == b.baseLevel ? 0 : 1
-        })
+        var mydata = data.slice(0)
 
         mydata.forEach(function(a){
+          if (typeof a.fullLevel === 'undefined') {
+            a.fullLevel = a.baseLevel
+          }
           ["health","stamina","oxygen","food","weight","melee"].forEach(function(f){
             if (typeof a.wildLevels[f] === 'undefined') {
               a.wildLevels[f] = 0
@@ -171,7 +170,16 @@
           a.name = a.name ? a.name : a.tamed ? '-' : ''
         })
 
+        mydata.sort(function(a,b){
+          return a.fullLevel > b.fullLevel ? -1 : a.fullLevel == b.fullLevel ? 0 : 1
+        })
+
         return mydata
+      },
+
+      _level: function(data) {
+        if (data.fullLevel > data.baseLevel) return data.fullLevel + " (" + data.baseLevel + ")"
+        return data.fullLevel
       },
 
       _null: function(x) {
