@@ -54,6 +54,10 @@
       iron-data-table .center {
         justify-content: center;
       }
+
+      paper-item {
+        cursor: pointer;
+      }
     </style>
     <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <app-drawer-layout id="drawerLayout">
