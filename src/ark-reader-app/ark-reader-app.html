@@ -79,7 +79,7 @@
 
             </div>
           </template>
-          <data-table-column name="Level" sort-by="fullLevel" width="60px" flex="0">
+          <data-table-column name="Level" sort-by="fullLevel" width="100px" flex="0">
             <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon><span style="text-align:center; flex:1;">[[_level(item)]]</span></template>
           </data-table-column>
           <data-table-column name="Name" sort-by="name">
@@ -158,14 +158,13 @@
         var mydata = data.slice(0)
 
         mydata.forEach(function(a){
-          if (typeof a.fullLevel === 'undefined') {
-            a.fullLevel = a.baseLevel
-          }
           ["health","stamina","oxygen","food","weight","melee"].forEach(function(f){
             if (typeof a.wildLevels[f] === 'undefined') {
               a.wildLevels[f] = 0
             }
           })
+
+          a.fullLevel = (typeof a.extraLevel === 'undefined') ? a.baseLevel : a.baseLevel + a.extraLevel
 
           a.name = a.name ? a.name : a.tamed ? '-' : ''
         })
