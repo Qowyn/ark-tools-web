@@ -109,6 +109,9 @@
           <data-table-column name="Melee" breeding sort-by="wildLevels.melee" width="60px" flex="0">
             <template>[[item.wildLevels.melee]]</template>
           </data-table-column>
+          <data-table-column name="Speed" breeding sort-by="wildLevels.speed" width="60px" flex="0">
+            <template>[[item.wildLevels.speed]]</template>
+          </data-table-column>
         </iron-data-table>
       </app-header-layout>
     </app-drawer-layout>
@@ -159,7 +162,7 @@
 
         mydata.forEach(function(a){
           a.wildLevels = (typeof a.wildLevels === 'undefined') ? {} : a.wildLevels;
-          ["health","stamina","oxygen","food","weight","melee"].forEach(function(f){
+          ["health","stamina","oxygen","food","weight","melee","speed"].forEach(function(f){
             a.wildLevels[f] = (typeof a.wildLevels[f] === 'undefined') ? 0 : a.wildLevels[f]
           })
 
