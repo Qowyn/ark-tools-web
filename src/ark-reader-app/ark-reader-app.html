@@ -158,10 +158,9 @@
         var mydata = data.slice(0)
 
         mydata.forEach(function(a){
+          a.wildLevels = (typeof a.wildLevels === 'undefined') ? {} : a.wildLevels;
           ["health","stamina","oxygen","food","weight","melee"].forEach(function(f){
-            if (typeof a.wildLevels[f] === 'undefined') {
-              a.wildLevels[f] = 0
-            }
+            a.wildLevels[f] = (typeof a.wildLevels[f] === 'undefined') ? 0 : a.wildLevels[f]
           })
 
           a.fullLevel = (typeof a.extraLevel === 'undefined') ? a.baseLevel : a.baseLevel + a.extraLevel
