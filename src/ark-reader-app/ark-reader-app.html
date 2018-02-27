@@ -148,7 +148,7 @@
       },
 
       _sortClasses: function(data) {
-        var myData = data.slice()
+        var myData = data.slice();
 
         myData.sort(function(a,b){
           return a.name > b.name ? 1 : a.name == b.name ? 0 : -1
@@ -158,17 +158,17 @@
       },
 
       _filterAndFix: function(data) {
-        var mydata = data.slice(0)
+        var mydata = data.slice(0);
 
         mydata.forEach(function(a){
           a.wildLevels = (typeof a.wildLevels === 'undefined') ? {} : a.wildLevels;
           ["health","stamina","oxygen","food","weight","melee","speed"].forEach(function(f){
-            a.wildLevels[f] = (typeof a.wildLevels[f] === 'undefined') ? 0 : a.wildLevels[f]
+            a.wildLevels[f] = (typeof a.wildLevels[f] === 'undefined') ? 0 : a.wildLevels[f];
           })
 
-          a.fullLevel = (typeof a.extraLevel === 'undefined') ? a.baseLevel : a.baseLevel + a.extraLevel
+          a.fullLevel = (typeof a.extraLevel === 'undefined') ? a.baseLevel : a.baseLevel + a.extraLevel;
 
-          a.name = a.name ? a.name : a.tamed ? '-' : ''
+          a.name = a.name ? a.name : a.tamed ? '-' : '';
         })
 
         mydata.sort(function(a,b){
@@ -179,8 +179,10 @@
       },
 
       _level: function(data) {
-        if (data.fullLevel > data.baseLevel) return data.fullLevel + " (" + data.baseLevel + ")"
-        return data.fullLevel
+        if (data.fullLevel > data.baseLevel)
+            return data.fullLevel + " (" + data.baseLevel + ")"
+        else
+            return data.fullLevel
       },
 
       _null: function(x) {
@@ -196,35 +198,35 @@
       },
 
       _beforeCellBind: function(data, cell) {
-        var maxHueValue = 150 / 6 * 1.4 // 40% > mean
+        var maxHueValue = 150 / 6 * 1.4; // 40% > mean
         if (data.item && data.item.wildLevels && cell.column.hasAttribute('breeding')) {
-          var v = Polymer.Base.get(cell.column.sortBy, data.item)
-          var hue = Math.min(120, Math.round(120 * v / maxHueValue))
-          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)'
-          cell.toggleClass('center', true)
+          var v = Polymer.Base.get(cell.column.sortBy, data.item);
+          var hue = Math.min(120, Math.round(120 * v / maxHueValue));
+          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
+          cell.toggleClass('center', true);
         }
       },
 
       drawerTap: function() {
         if (this.$.drawerLayout.narrow) {
-          this.$.drawer.close()
+          this.$.drawer.close();
         }
       },
 
       _dataSource: function(cls) {
-        var me = this
-        var delegate = null
+        var me = this;
+        var delegate = null;
         return function(opts, success, err) {
           if (delegate === null) {
-            var request = document.createElement('iron-request')
+            var request = document.createElement('iron-request');
 
             request.send({url: me._clsUrl(cls), handleAs: 'json'}).then(function(e) {
-              var data = me._filterAndFix(e.xhr.response)
-              delegate = ArrayDataSource(data)
-              delegate(opts, success, err)
+              var data = me._filterAndFix(e.xhr.response);
+              delegate = ArrayDataSource(data);
+              delegate(opts, success, err);
             }, err)
           } else {
-            delegate(opts, success, err)
+            delegate(opts, success, err);
           }
         }
       }
