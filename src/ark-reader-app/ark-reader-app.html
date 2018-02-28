@@ -60,6 +60,18 @@
         }
         cursor: pointer;
       }
+
+      * {
+        --paper-input-container: {
+          margin-bottom: 20px;
+        };
+        --paper-input-container-label-floating: {
+          visibility: hidden;
+        }
+        --paper-input-container-underline-focus: {
+          border-bottom: 2px solid #009688;
+        }
+      }
     </style>
     <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <app-drawer-layout id="drawerLayout">
@@ -88,7 +100,7 @@
           <data-table-column name="Level" sort-by="fullLevel" width="100px" flex="0">
             <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon><span style="text-align:center; flex:1;">[[_level(item)]]</span></template>
           </data-table-column>
-          <data-table-column name="Name" sort-by="name">
+          <data-table-column name="Name" filter-by="name" sort-by="name">
             <template>[[item.name]]</template>
           </data-table-column>
           <data-table-column name="Lat" width="40px" flex="0">
