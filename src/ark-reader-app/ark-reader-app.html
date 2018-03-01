@@ -18,6 +18,7 @@
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
 
 <link rel="import" href="ark-m-icons.html">
 <link rel="import" href="ark-f-icons.html">
@@ -35,21 +36,6 @@
         color: white;
       }
 
-      iron-data-table {
-        height: calc(100vh - 64px);
-      }
-
-      iron-data-table .detail {
-        display: flex;
-        width: 100%;
-        justify-content: space-around;
-        align-items: center;
-      }
-
-      iron-data-table .center {
-        justify-content: center;
-      }
-
       paper-item {
         --paper-item: {
           color: #424242;
@@ -59,6 +45,16 @@
           color: #009688;
         }
         cursor: pointer;
+      }
+
+      paper-toggle-button {
+        --paper-toggle-button-label-color: white;
+        --paper-toggle-button-checked-bar-color:  var(--paper-teal-200);
+        --paper-toggle-button-checked-button-color:  var(--paper-teal-50);
+        --paper-toggle-button-checked-ink-color: var(--paper-teal-100);
+        --paper-toggle-button-unchecked-bar-color:  var(--paper-teal-900);
+        --paper-toggle-button-unchecked-button-color:  var(--paper-teal-400);
+        --paper-toggle-button-unchecked-ink-color: var(--paper-teal-100);
       }
 
       * {
@@ -72,10 +68,26 @@
           border-bottom: 2px solid #009688;
         }
       }
-      data-table-cell {
-        height: 36px;
+
+      iron-icon {
+        --iron-icon: {
+          margin-top: -6px;
+        }
       }
+
+      iron-data-table .detail {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+        align-items: center;
+      }
+
+      iron-data-table .center {
+        justify-content: center;
+      }
+
       iron-data-table {
+        height: calc(100vh - 64px);
         --iron-data-table-header: {
           box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
           transition: box-shadow 200ms;
@@ -102,6 +114,10 @@
           z-index: 1;
         }
       }
+
+      data-table-cell {
+        height: 36px;
+      }
     </style>
     <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <app-drawer-layout id="drawerLayout">
@@ -119,9 +135,10 @@
           <app-toolbar>
             <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
             <div title>Q's Ark Reader</div>
+            <paper-toggle-button checked$="[[showWild]]" on-tap="_toggleWild"><iron-icon icon="icons:pets"></iron-icon></paper-toggle-button>
           </app-toolbar>
         </app-header>
-        <iron-data-table data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]">
+        <iron-data-table data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]" filter="{{filter}}">
           <template is="row-detail">
             <div class="detail">
 
@@ -174,10 +191,6 @@
       is: 'ark-reader-app',
 
       properties: {
-        dinoData: {
-          type: Array,
-          computed: '_filterAndFix(dinos)'
-        },
         sortedClasses: {
           type: Array,
           computed: '_sortClasses(classes)'
@@ -185,6 +198,14 @@
         dataSource: {
           type: Object,
           computed: '_dataSource(cls)'
+        },
+        filter: {
+          type: Array,
+          computed: '_filter(showWild)'
+        },
+        showWild: {
+          type: Boolean,
+          value: false
         },
         _boundBeforeCellBind: {
           type: Object,
@@ -194,8 +215,55 @@
         }
       },
 
+      _filter: function(showWild) {
+        var myFilter = this.filter ? this.filter.slice() : [];
+        if (this.showWild)
+          for (var i = 0; i < myFilter.length; i++) {
+            if (myFilter[i].path == 'tamed') {
+              myFilter.splice(i, 1);
+              break
+            }
+          }
+        else
+          myFilter.push({'path': 'tamed', 'filter': true});
+        return myFilter
+      },
+
+      _toggleWild: function() {
+        this.showWild = !this.showWild;
+      },
+
+      _level: function(data) {
+        if (data.fullLevel > data.baseLevel)
+            return data.fullLevel + " (" + data.baseLevel + ")"
+        else
+            return data.fullLevel
+      },
+
+      _null: function(x) {
+        return x ? x : 0
+      },
+
+      _genderIcon: function(x) {
+        return x.female ? 'ark-f:female' : 'ark-m:male'
+      },
+
+      _formatGeo: function(x) {
+        return this._null(x).toFixed(1)
+      },
+
       _clsUrl: function(cls) {
         return '/data/' + cls + '.json'
+      },
+
+      _beforeCellBind: function(data, cell) {
+        var maxHueValue = 150 / 6 * 1.4; // 40% > mean
+        if (data.item && data.item.wildLevels && cell.column.hasAttribute('breeding')) {
+          var v = Polymer.Base.get(cell.column.sortBy, data.item);
+          var hue = Math.min(120, Math.round(120 * v / maxHueValue));
+          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
+          cell.toggleClass('center', true);
+        }
       },
 
       _sortClasses: function(data) {
@@ -229,45 +297,6 @@
         return mydata
       },
 
-      _level: function(data) {
-        if (data.fullLevel > data.baseLevel)
-            return data.fullLevel + " (" + data.baseLevel + ")"
-        else
-            return data.fullLevel
-      },
-
-      _null: function(x) {
-        return x ? x : 0
-      },
-
-      _tamed: function(x) {
-        return x.tamed ? 'Name ' + x.name : ''
-      },
-
-      _genderIcon: function(x) {
-        return x.female ? 'ark-f:female' : 'ark-m:male'
-      },
-
-      _formatGeo: function(x) {
-        return x.toFixed(1)
-      },
-
-      _beforeCellBind: function(data, cell) {
-        var maxHueValue = 150 / 6 * 1.4; // 40% > mean
-        if (data.item && data.item.wildLevels && cell.column.hasAttribute('breeding')) {
-          var v = Polymer.Base.get(cell.column.sortBy, data.item);
-          var hue = Math.min(120, Math.round(120 * v / maxHueValue));
-          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
-          cell.toggleClass('center', true);
-        }
-      },
-
-      drawerTap: function() {
-        if (this.$.drawerLayout.narrow) {
-          this.$.drawer.close();
-        }
-      },
-
       _dataSource: function(cls) {
         var me = this;
         var delegate = null;
@@ -284,7 +313,13 @@
             delegate(opts, success, err);
           }
         }
-      }
+      },
+
+      drawerTap: function() {
+        if (this.$.drawerLayout.narrow) {
+          this.$.drawer.close();
+        }
+      },
 
     })
   </script>
