@@ -123,9 +123,9 @@
     <app-drawer-layout id="drawerLayout">
       <app-drawer swipe-open id="drawer">
         <div style="height: 100%; overflow: auto;">
-          <paper-listbox attr-for-selected="cls" selected="{{cls}}">
+          <paper-listbox attr-for-selected="creature" selected="{{creature}}">
             <template is="dom-repeat" items="[[sortedClasses]]">
-              <paper-item cls="[[item.cls]]" on-tap="drawerTap">[[item.name]]</paper-item>
+              <paper-item creature="[[item.cls]]" on-tap="drawerTap">[[item.name]]</paper-item>
             </template>
           </paper-listbox>
         </div>
@@ -197,7 +197,7 @@
         },
         dataSource: {
           type: Object,
-          computed: '_dataSource(cls)'
+          computed: '_dataSource(creature)'
         },
         filter: {
           type: Array,
@@ -252,8 +252,8 @@
         return this._null(x).toFixed(1)
       },
 
-      _clsUrl: function(cls) {
-        return '/data/' + cls + '.json'
+      _creatureUrl: function(creature) {
+        return '/data/' + creature + '.json'
       },
 
       _beforeCellBind: function(data, cell) {
@@ -297,14 +297,14 @@
         return mydata
       },
 
-      _dataSource: function(cls) {
+      _dataSource: function(creature) {
         var me = this;
         var delegate = null;
         return function(opts, success, err) {
           if (delegate === null) {
             var request = document.createElement('iron-request');
 
-            request.send({url: me._clsUrl(cls), handleAs: 'json'}).then(function(e) {
+            request.send({url: me._creatureUrl(creature), handleAs: 'json'}).then(function(e) {
               var data = me._filterAndFix(e.xhr.response);
               delegate = ArrayDataSource(data);
               delegate(opts, success, err);
