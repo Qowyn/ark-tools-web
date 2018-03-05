@@ -22,6 +22,7 @@
 
 <link rel="import" href="ark-m-icons.html">
 <link rel="import" href="ark-f-icons.html">
+<link rel="import" href="dino-colors.html">
 
 <dom-module id="ark-reader-app">
   <template>
@@ -84,11 +85,27 @@
         }
       }
 
+      data-table-row-detail {
+        padding: 0;
+      }
+
       iron-data-table .detail {
-        display: flex;
+        padding: 10px;
         width: 100%;
         justify-content: space-around;
         align-items: center;
+        background-color: #dfdfdf;
+        box-shadow: inset 0 2px 3px 0 rgba(0,0,0,0.1);
+        cursor: default;
+      }
+
+      .detail p {
+        margin: 2px 1em 2px 0;
+      }
+
+      .detail td {
+        vertical-align: baseline;
+        padding-right: 20px;
       }
 
       iron-data-table .center {
@@ -153,14 +170,20 @@
             <paper-toggle-button checked$="[[showWild]]" on-tap="_toggleWild"><iron-icon icon="icons:pets"></iron-icon></paper-toggle-button>
           </app-toolbar>
         </app-header>
-        <iron-data-table data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]" filter="{{filter}}">
+        <iron-data-table details-enabled data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]" filter="{{filter}}">
           <template is="row-detail">
             <div class="detail">
-
+            <table>
+              <tr><td><b>Lat</b>:</td><td>[[item.location.lat]]</td><td><b>ID</b>:</td><td>[[item.id]]</td><td><b>Colors</b>:</td><td><dino-colors colors="[[item.colorSetIndices]]"></dino-colors</td></tr>
+              <tr><td><b>Lon</b>:</td><td>[[item.location.lon]]</td><td><b>Taming Effectiveness</b>:</td><td>[[item.tamingEffectivness]]</td><td><b>Experience</b>:</td><td>[[item.experience]]</td></tr>
+              <tr><td><b>X</b>:</td><td>[[item.location.x]]</td><td><b>Base Level</b>:</td><td>[[item.baseLevel]]</td><td><b>Tamed On</b>:</td><td>[[item.tamedOnServerName]]</td></tr>
+              <tr><td><b>Y</b>:</td><td>[[item.location.y]]</td><td><b>Extra Level</b>:</td><td>[[item.extraLevel]]</td><td><b>Uploaded From</b>:</td><td>[[item.uploadedFromServerName]]</td></tr>
+              <tr><td><b>Z</b>:</td><td>[[item.location.z]]</td><td><b>Full Level</b>:</td><td>[[item.fullLevel]]</td><td><b>Last Enter Stasis</b>:</td><td>[[_stasisTime(item.lastEnterStasisTime)]]</td></tr>
+            </table>
             </div>
           </template>
           <data-table-column name="Level" sort-by="fullLevel" width="100px" flex="0">
-            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon><span style="text-align:center; flex:1;">[[_level(item)]]</span></template>
+            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-left: -16px;"></iron-icon><span style="text-align:center; flex:1;">[[item.fullLevel]]</span></template>
           </data-table-column>
           <data-table-column name="Name" filter-by="name" sort-by="name">
             <template>[[item.name]]</template>
@@ -235,7 +258,7 @@
           value: function() {
             return this._beforeCellBind.bind(this)
           }
-        }
+        },
       },
 
       _indexUrl: function(source) {
@@ -268,13 +291,6 @@
         this.showWild = !this.showWild;
       },
 
-      _level: function(data) {
-        if (data.fullLevel > data.baseLevel)
-            return data.fullLevel + " (" + data.baseLevel + ")"
-        else
-            return data.fullLevel
-      },
-
       _null: function(x) {
         return x ? x : 0
       },
@@ -287,9 +303,16 @@
         return this._null(x).toFixed(1)
       },
 
+      _stasisTime: function(x) {
+        if (x) {
+          var date = new Date(x*1000);
+          return date.getHours() + ' hours ' + date.getMinutes() + ' minutes ago';
+        } else return 'unknown'
+      },
+
       _beforeCellBind: function(data, cell) {
         var maxHueValue = 150 / 6 * 1.4; // 40% > mean
-        if (data.item && data.item.wildLevels && cell.column.hasAttribute('breeding')) {
+        if (data.item && cell.column.hasAttribute('breeding')) {
           var v = Polymer.Base.get(cell.column.sortBy, data.item);
           var hue = Math.min(120, Math.round(120 * v / maxHueValue));
           cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
