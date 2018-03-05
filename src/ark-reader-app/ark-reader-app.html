@@ -13,14 +13,16 @@
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 
-<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
 
 <link rel="import" href="ark-m-icons.html">
 <link rel="import" href="ark-f-icons.html">
+<link rel="import" href="dino-colors.html">
 
 <dom-module id="ark-reader-app">
   <template>
@@ -31,37 +33,126 @@
       }
 
       app-header {
-        background-color: #13473f;
-        color: #70C0B6;
+        background-color: #009688;
+        color: white;
+      }
+
+      paper-item {
+        --paper-item: {
+          color: #424242;
+        }
+        --paper-item-selected: {
+          background-color: #e0f2f1;
+          color: #009688;
+        }
+        cursor: pointer;
+      }
+
+      paper-tab {
+        --paper-tab-ink: var(--paper-teal-100);
+      }
+
+      paper-tabs {
+        --paper-tabs-selection-bar-color: var(--paper-teal-50);
+      }
+
+      paper-toggle-button {
+        margin: 0 16px;
+        --paper-toggle-button-label-color: white;
+        --paper-toggle-button-checked-bar-color:  var(--paper-teal-200);
+        --paper-toggle-button-checked-button-color:  var(--paper-teal-50);
+        --paper-toggle-button-checked-ink-color: var(--paper-teal-100);
+        --paper-toggle-button-unchecked-bar-color:  var(--paper-teal-900);
+        --paper-toggle-button-unchecked-button-color:  var(--paper-teal-400);
+        --paper-toggle-button-unchecked-ink-color: var(--paper-teal-100);
       }
 
       * {
-        --primary-color: #13473f;
-        --primary-text-color: #70C0B6;
+        --paper-input-container: {
+          margin-bottom: 20px;
+        };
+        --paper-input-container-label-floating: {
+          visibility: hidden;
+        }
+        --paper-input-container-underline-focus: {
+          border-bottom: 2px solid #009688;
+        }
       }
 
-      iron-data-table {
-        height: calc(100vh - 64px);
+      iron-icon {
+        --iron-icon: {
+          margin-top: -6px;
+        }
+      }
+
+      data-table-row-detail {
+        padding: 0;
       }
 
       iron-data-table .detail {
-        display: flex;
+        padding: 10px;
         width: 100%;
         justify-content: space-around;
         align-items: center;
+        background-color: #dfdfdf;
+        box-shadow: inset 0 2px 3px 0 rgba(0,0,0,0.1);
+        cursor: default;
+      }
+
+      .detail p {
+        margin: 2px 1em 2px 0;
+      }
+
+      .detail td {
+        vertical-align: baseline;
+        padding-right: 20px;
       }
 
       iron-data-table .center {
         justify-content: center;
       }
+
+      iron-data-table {
+        height: calc(100vh - 64px);
+        --iron-data-table-header: {
+          box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+          transition: box-shadow 200ms;
+          -webkit-transition: box-shadow 200ms;
+          z-index: 1;
+          background-color: #fafafa;
+          color: rgba(0, 0, 0, 0.54);
+          font-size: 12px;
+          font-weight: 600;
+          height: 36px;
+        }
+        --iron-data-table-row-after: {
+          background-color: #009688;
+          bottom: 0;
+          content: "";
+          height: 2px;
+          left: 0;
+          pointer-events: none;
+          position: absolute;
+          right: 0;
+          transition: all 0.16s ease-in-out;
+          -webkit-transform: scaleX(0.0);
+          transform: scaleX(0.0);
+          z-index: 1;
+        }
+      }
+
+      data-table-cell {
+        height: 36px;
+      }
     </style>
-    <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
+    <iron-ajax auto url="/appconfig.json" handle-as="json" last-response="{{sources}}"></iron-ajax>
+    <iron-ajax auto url="[[indexUrl]]" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <app-drawer-layout id="drawerLayout">
       <app-drawer swipe-open id="drawer">
         <div style="height: 100%; overflow: auto;">
-          <paper-listbox attr-for-selected="cls" selected="{{cls}}">
-            <template is="dom-repeat" items="[[sortedClasses]]">
-              <paper-item cls="[[item.cls]]" on-tap="drawerTap">[[item.name]]</paper-item>
+          <paper-listbox attr-for-selected="creature" selected="{{creature}}">
+            <template is="dom-repeat" items="[[sortedClasses]]" as="creature">
+              <paper-item creature="[[creature.cls]]" on-tap="drawerTap">[[creature.name]]</paper-item>
             </template>
           </paper-listbox>
         </div>
@@ -71,43 +162,61 @@
           <app-toolbar>
             <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
             <div title>Q's Ark Reader</div>
+            <paper-tabs id='tabs' attr-for-selected="path" selected="{{source}}">
+              <template is="dom-repeat" items="[[sources]]" as="source" on-dom-change="_setSelectedTab">
+                <paper-tab path="[[source.path]]">[[source.name]]</paper-tab>
+              </template>
+            </paper-tabs>
+            <paper-toggle-button checked$="[[showWild]]" on-tap="_toggleWild"><iron-icon icon="icons:pets"></iron-icon></paper-toggle-button>
           </app-toolbar>
         </app-header>
-        <iron-data-table data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]">
+        <iron-data-table details-enabled data-source="[[dataSource]]" before-cell-bind="[[_boundBeforeCellBind]]" filter="{{filter}}">
           <template is="row-detail">
             <div class="detail">
-
+            <table>
+              <tr><td><b>Lat</b>:</td><td>[[item.location.lat]]</td><td><b>ID</b>:</td><td>[[item.id]]</td><td><b>Colors</b>:</td><td><dino-colors colors="[[item.colorSetIndices]]"></dino-colors</td></tr>
+              <tr><td><b>Lon</b>:</td><td>[[item.location.lon]]</td><td><b>Taming Effectiveness</b>:</td><td>[[item.tamingEffectivness]]</td><td><b>Experience</b>:</td><td>[[item.experience]]</td></tr>
+              <tr><td><b>X</b>:</td><td>[[item.location.x]]</td><td><b>Base Level</b>:</td><td>[[item.baseLevel]]</td><td><b>Tamed On</b>:</td><td>[[item.tamedOnServerName]]</td></tr>
+              <tr><td><b>Y</b>:</td><td>[[item.location.y]]</td><td><b>Extra Level</b>:</td><td>[[item.extraLevel]]</td><td><b>Uploaded From</b>:</td><td>[[item.uploadedFromServerName]]</td></tr>
+              <tr><td><b>Z</b>:</td><td>[[item.location.z]]</td><td><b>Full Level</b>:</td><td>[[item.fullLevel]]</td><td><b>Last Enter Stasis</b>:</td><td>[[_stasisTime(item.lastEnterStasisTime)]]</td></tr>
+            </table>
             </div>
           </template>
-          <data-table-column name="Level" sort-by="fullLevel" width="60px" flex="0">
-            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-right:4px"></iron-icon><span style="text-align:center; flex:1;">[[_level(item)]]</span></template>
+          <data-table-column name="Level" sort-by="fullLevel" width="100px" flex="0">
+            <template><iron-icon icon="[[_genderIcon(item)]]" style="margin-left: -16px;"></iron-icon><span style="text-align:center; flex:1;">[[item.fullLevel]]</span></template>
           </data-table-column>
-          <data-table-column name="Name" sort-by="name">
+          <data-table-column name="Name" filter-by="name" sort-by="name">
             <template>[[item.name]]</template>
           </data-table-column>
+          <data-table-column name="Tribe" filter-by="tribe" sort-by="tribe">
+            <template>[[item.tribe]]</template>
+          </data-table-column>
           <data-table-column name="Lat" width="40px" flex="0">
-            <template>[[item.lat]]</template>
+            <template>[[_formatGeo(item.location.lat)]]</template>
           </data-table-column>
           <data-table-column name="Lon" width="40px" flex="0">
-            <template>[[item.lon]]</template>
+            <template>[[_formatGeo(item.location.lon)]]</template>
           </data-table-column>
-          <data-table-column name="Leben" breeding sort-by="wildLevels.health" width="62px" flex="0">
+          <data-table-column name="Health" breeding sort-by="wildLevels.health" width="60px" flex="0">
             <template>[[item.wildLevels.health]]</template>
           </data-table-column>
-          <data-table-column name="Ausdauer" breeding sort-by="wildLevels.stamina" width="80px" flex="0">
+          <data-table-column name="Stamina" breeding sort-by="wildLevels.stamina" width="60px" flex="0">
             <template>[[item.wildLevels.stamina]]</template>
           </data-table-column>
-          <data-table-column name="Sauerstoff" breeding sort-by="wildLevels.oxygen" width="85px" flex="0">
+          <data-table-column name="Oxygen" breeding sort-by="wildLevels.oxygen" width="60px" flex="0">
             <template>[[item.wildLevels.oxygen]]</template>
           </data-table-column>
-          <data-table-column name="Nahrung" breeding sort-by="wildLevels.food" width="74px" flex="0">
+          <data-table-column name="Food" breeding sort-by="wildLevels.food" width="60px" flex="0">
             <template>[[item.wildLevels.food]]</template>
           </data-table-column>
-          <data-table-column name="Gewicht" breeding sort-by="wildLevels.weight" width="72px" flex="0">
+          <data-table-column name="Weight" breeding sort-by="wildLevels.weight" width="60px" flex="0">
             <template>[[item.wildLevels.weight]]</template>
           </data-table-column>
-          <data-table-column name="Nahkampf" breeding sort-by="wildLevels.melee" width="84px" flex="0">
+          <data-table-column name="Melee" breeding sort-by="wildLevels.melee" width="60px" flex="0">
             <template>[[item.wildLevels.melee]]</template>
+          </data-table-column>
+          <data-table-column name="Speed" breeding sort-by="wildLevels.speed" width="60px" flex="0">
+            <template>[[item.wildLevels.speed]]</template>
           </data-table-column>
         </iron-data-table>
       </app-header-layout>
@@ -120,9 +229,13 @@
       is: 'ark-reader-app',
 
       properties: {
-        dinoData: {
-          type: Array,
-          computed: '_filterAndFix(dinos)'
+        indexUrl: {
+          type: String,
+          computed: '_indexUrl(source)'
+        },
+        creatureUrl: {
+          type: String,
+          computed: '_creatureUrl(source, creature)'
         },
         sortedClasses: {
           type: Array,
@@ -130,22 +243,85 @@
         },
         dataSource: {
           type: Object,
-          computed: '_dataSource(cls)'
+          computed: '_dataSource(creatureUrl)'
+        },
+        filter: {
+          type: Array,
+          computed: '_filter(showWild)'
+        },
+        showWild: {
+          type: Boolean,
+          value: false
         },
         _boundBeforeCellBind: {
           type: Object,
           value: function() {
             return this._beforeCellBind.bind(this)
           }
+        },
+      },
+
+      _indexUrl: function(source) {
+        return '/' + source + '/' + 'classes.json'
+      },
+
+      _creatureUrl: function(source, creature) {
+        return '/' + source + '/' + creature + '.json'
+      },
+
+      _setSelectedTab: function() {
+        this.$.tabs.selected = this.sources[0].path;
+      },
+
+      _filter: function(showWild) {
+        var myFilter = this.filter ? this.filter.slice() : [];
+        if (this.showWild)
+          for (var i = 0; i < myFilter.length; i++) {
+            if (myFilter[i].path == 'tamed') {
+              myFilter.splice(i, 1);
+              break
+            }
+          }
+        else
+          myFilter.push({'path': 'tamed', 'filter': true});
+        return myFilter
+      },
+
+      _toggleWild: function() {
+        this.showWild = !this.showWild;
+      },
+
+      _null: function(x) {
+        return x ? x : 0
+      },
+
+      _genderIcon: function(x) {
+        return x.female ? 'ark-f:female' : 'ark-m:male'
+      },
+
+      _formatGeo: function(x) {
+        return this._null(x).toFixed(1)
+      },
+
+      _stasisTime: function(x) {
+        if (x) {
+          var date = new Date(x*1000);
+          return date.getHours() + ' hours ' + date.getMinutes() + ' minutes ago';
+        } else return 'unknown'
+      },
+
+      _beforeCellBind: function(data, cell) {
+        var maxHueValue = 150 / 6 * 1.4; // 40% > mean
+        if (data.item && cell.column.hasAttribute('breeding')) {
+          var v = Polymer.Base.get(cell.column.sortBy, data.item);
+          var hue = Math.min(120, Math.round(120 * v / maxHueValue));
+          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)';
+          cell.toggleClass('center', true);
         }
       },
 
-      _clsUrl: function(cls) {
-        return '/data/' + cls + '.json'
-      },
-
       _sortClasses: function(data) {
-        var myData = data.slice()
+        var myData = data.slice();
 
         myData.sort(function(a,b){
           return a.name > b.name ? 1 : a.name == b.name ? 0 : -1
@@ -155,19 +331,17 @@
       },
 
       _filterAndFix: function(data) {
-        var mydata = data.slice(0)
+        var mydata = data.slice(0);
 
         mydata.forEach(function(a){
-          if (typeof a.fullLevel === 'undefined') {
-            a.fullLevel = a.baseLevel
-          }
-          ["health","stamina","oxygen","food","weight","melee"].forEach(function(f){
-            if (typeof a.wildLevels[f] === 'undefined') {
-              a.wildLevels[f] = 0
-            }
+          a.wildLevels = (typeof a.wildLevels === 'undefined') ? {} : a.wildLevels;
+          ["health","stamina","oxygen","food","weight","melee","speed"].forEach(function(f){
+            a.wildLevels[f] = (typeof a.wildLevels[f] === 'undefined') ? 0 : a.wildLevels[f];
           })
 
-          a.name = a.name ? a.name : a.tamed ? '-' : ''
+          a.fullLevel = (typeof a.extraLevel === 'undefined') ? a.baseLevel : a.baseLevel + a.extraLevel;
+
+          a.name = a.name ? a.name : a.tamed ? '-' : '';
         })
 
         mydata.sort(function(a,b){
@@ -177,56 +351,29 @@
         return mydata
       },
 
-      _level: function(data) {
-        if (data.fullLevel > data.baseLevel) return data.fullLevel + " (" + data.baseLevel + ")"
-        return data.fullLevel
-      },
+      _dataSource: function(creatureUrl) {
+        var me = this;
+        var delegate = null;
+        return function(opts, success, err) {
+          if (delegate === null) {
+            var request = document.createElement('iron-request');
 
-      _null: function(x) {
-        return x ? x : 0
-      },
-
-      _tamed: function(x) {
-        return x.tamed ? 'Name ' + x.name : ''
-      },
-
-      _genderIcon: function(x) {
-        return x.female ? 'ark-f:female' : 'ark-m:male'
-      },
-
-      _beforeCellBind: function(data, cell) {
-        var maxHueValue = 150 / 6 * 1.4 // 40% > mean
-        if (data.item && data.item.wildLevels && cell.column.hasAttribute('breeding')) {
-          var v = Polymer.Base.get(cell.column.sortBy, data.item)
-          var hue = Math.min(120, Math.round(120 * v / maxHueValue))
-          cell.style.backgroundColor = 'hsl(' + hue + ', 100%, 85%)'
-          cell.toggleClass('center', true)
+            request.send({url: creatureUrl, handleAs: 'json'}).then(function(e) {
+              var data = me._filterAndFix(e.xhr.response);
+              delegate = ArrayDataSource(data);
+              delegate(opts, success, err);
+            }, err)
+          } else {
+            delegate(opts, success, err);
+          }
         }
       },
 
       drawerTap: function() {
         if (this.$.drawerLayout.narrow) {
-          this.$.drawer.close()
+          this.$.drawer.close();
         }
       },
-
-      _dataSource: function(cls) {
-        var me = this
-        var delegate = null
-        return function(opts, success, err) {
-          if (delegate === null) {
-            var request = document.createElement('iron-request')
-
-            request.send({url: me._clsUrl(cls), handleAs: 'json'}).then(function(e) {
-              var data = me._filterAndFix(e.xhr.response)
-              delegate = ArrayDataSource(data)
-              delegate(opts, success, err)
-            }, err)
-          } else {
-            delegate(opts, success, err)
-          }
-        }
-      }
 
     })
   </script>
