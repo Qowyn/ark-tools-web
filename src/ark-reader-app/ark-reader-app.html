@@ -13,12 +13,12 @@
 <link rel="import" href="../../bower_components/iron-list/iron-list.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 
-<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
 
 <link rel="import" href="ark-m-icons.html">
 <link rel="import" href="ark-f-icons.html">
@@ -47,7 +47,16 @@
         cursor: pointer;
       }
 
+      paper-tab {
+        --paper-tab-ink: var(--paper-teal-100);
+      }
+
+      paper-tabs {
+        --paper-tabs-selection-bar-color: var(--paper-teal-50);
+      }
+
       paper-toggle-button {
+        margin: 0 16px;
         --paper-toggle-button-label-color: white;
         --paper-toggle-button-checked-bar-color:  var(--paper-teal-200);
         --paper-toggle-button-checked-button-color:  var(--paper-teal-50);
@@ -119,13 +128,14 @@
         height: 36px;
       }
     </style>
-    <iron-ajax auto url="/data/classes.json" handle-as="json" last-response="{{classes}}"></iron-ajax>
+    <iron-ajax auto url="/appconfig.json" handle-as="json" last-response="{{sources}}"></iron-ajax>
+    <iron-ajax auto url="[[indexUrl]]" handle-as="json" last-response="{{classes}}"></iron-ajax>
     <app-drawer-layout id="drawerLayout">
       <app-drawer swipe-open id="drawer">
         <div style="height: 100%; overflow: auto;">
           <paper-listbox attr-for-selected="creature" selected="{{creature}}">
-            <template is="dom-repeat" items="[[sortedClasses]]">
-              <paper-item creature="[[item.cls]]" on-tap="drawerTap">[[item.name]]</paper-item>
+            <template is="dom-repeat" items="[[sortedClasses]]" as="creature">
+              <paper-item creature="[[creature.cls]]" on-tap="drawerTap">[[creature.name]]</paper-item>
             </template>
           </paper-listbox>
         </div>
@@ -135,6 +145,11 @@
           <app-toolbar>
             <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
             <div title>Q's Ark Reader</div>
+            <paper-tabs id='tabs' attr-for-selected="path" selected="{{source}}">
+              <template is="dom-repeat" items="[[sources]]" as="source" on-dom-change="_setSelectedTab">
+                <paper-tab path="[[source.path]]">[[source.name]]</paper-tab>
+              </template>
+            </paper-tabs>
             <paper-toggle-button checked$="[[showWild]]" on-tap="_toggleWild"><iron-icon icon="icons:pets"></iron-icon></paper-toggle-button>
           </app-toolbar>
         </app-header>
@@ -191,13 +206,21 @@
       is: 'ark-reader-app',
 
       properties: {
+        indexUrl: {
+          type: String,
+          computed: '_indexUrl(source)'
+        },
+        creatureUrl: {
+          type: String,
+          computed: '_creatureUrl(source, creature)'
+        },
         sortedClasses: {
           type: Array,
           computed: '_sortClasses(classes)'
         },
         dataSource: {
           type: Object,
-          computed: '_dataSource(creature)'
+          computed: '_dataSource(creatureUrl)'
         },
         filter: {
           type: Array,
@@ -213,6 +236,18 @@
             return this._beforeCellBind.bind(this)
           }
         }
+      },
+
+      _indexUrl: function(source) {
+        return '/' + source + '/' + 'classes.json'
+      },
+
+      _creatureUrl: function(source, creature) {
+        return '/' + source + '/' + creature + '.json'
+      },
+
+      _setSelectedTab: function() {
+        this.$.tabs.selected = this.sources[0].path;
       },
 
       _filter: function(showWild) {
@@ -250,10 +285,6 @@
 
       _formatGeo: function(x) {
         return this._null(x).toFixed(1)
-      },
-
-      _creatureUrl: function(creature) {
-        return '/data/' + creature + '.json'
       },
 
       _beforeCellBind: function(data, cell) {
@@ -297,14 +328,14 @@
         return mydata
       },
 
-      _dataSource: function(creature) {
+      _dataSource: function(creatureUrl) {
         var me = this;
         var delegate = null;
         return function(opts, success, err) {
           if (delegate === null) {
             var request = document.createElement('iron-request');
 
-            request.send({url: me._creatureUrl(creature), handleAs: 'json'}).then(function(e) {
+            request.send({url: creatureUrl, handleAs: 'json'}).then(function(e) {
               var data = me._filterAndFix(e.xhr.response);
               delegate = ArrayDataSource(data);
               delegate(opts, success, err);
